@@ -1,0 +1,12 @@
+{application, 'jukebox_server',
+ [{description, "Web interface to collaboratively queue songs to a live playlist"},
+  {vsn, "0.1.0"},
+  {registered, [jukebox_server, fetch_song_sup, jb_mpd, jukebox_server_sup, manager]},
+  {mod, {'jukebox_server_app', []}},
+  {applications,
+   [kernel,
+    stdlib,
+    cowboy
+   ]},
+  {modules, []},
+ ]}.

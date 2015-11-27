@@ -1,0 +1,56 @@
+body {
+	font-family: 'Source Sans Pro', sans-serif;
+}
+
+h2 {
+	font-weight: 600;
+}
+
+#nameentry {
+	display: none;
+}
+
+#interface {
+	display: none;
+}
+
+.song {
+	display: flex;
+	width: 300px;
+	/* height: 95px; */
+	border: 1px solid gray;
+	overflow: auto;
+
+	margin-bottom: 5px;
+}
+
+.name {
+	font-weight: bold;
+}
+
+.song-thumb {
+	align-self: center;
+	margin-right: 0.5em;
+}
+
+.song-thumb > img {
+	height: auto;
+	width: auto;
+	max-width: 120px;
+	max-height: 90px;
+}
+
+.songtitle {
+	flex: 1;
+	align-self: center;
+}
+
+#queuelist {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.queue {
+	margin-right: 10px;
+	margin-bottom: 15px;
+}
