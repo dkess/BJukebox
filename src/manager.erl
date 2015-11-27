@@ -57,7 +57,7 @@ handle_cast({queue, Name, Songtuple}, S) ->
 											 1,
 											 S#state.queues,
 											 {Name, lists:append(Songlist,
-																 [3Songtuple])})}};
+																 [Songtuple])})}};
 		false ->
 			case S#state.queues of
 				[] ->

@@ -8,5 +8,5 @@
     stdlib,
     cowboy
    ]},
-  {modules, []},
+  {modules, []}
  ]}.
