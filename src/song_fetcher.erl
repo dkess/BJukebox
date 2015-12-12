@@ -22,7 +22,9 @@ get_youtube(Callback, Songurl) ->
 							 "-eg",
 							 "--get-thumbnail",
 							 Songurl]}]),
-	Callback ! {match, read_song_title(Port, "")}.
+	Callback ! read_song_title(Port, "").
+
+
 
 % first line of youtube-dl output: the song's title
 -spec read_song_title(Port :: port(), TitleInit :: string()) -> songtuple().
@@ -31,7 +33,11 @@ read_song_title(Port, TitleInit) ->
 		{Port, {data, {eol, Title}}} ->
 			read_song_url(Port, TitleInit ++ Title, "");
 		{Port, {data, {noeol, Title}}} ->
-			read_song_title(Port, TitleInit ++ Title)
+			read_song_title(Port, TitleInit ++ Title);
+		{Port, {exit_status, _}} ->
+			nomatch;
+		_ ->
+			read_song_title(Port, TitleInit)
 	end.
 
 % second line of youtube-dl output: the song's url
@@ -42,7 +48,11 @@ read_song_url(Port, Title, UrlInit) ->
 		{Port, {data, {eol, Url}}} ->
 			read_song_thumbnail(Port, Title, UrlInit ++ Url, "");
 		{Port, {data, {noeol, Url}}} ->
-			read_song_url(Port, Title, UrlInit ++ Url)
+			read_song_url(Port, Title, UrlInit ++ Url);
+		{Port, {exit_status, _}} ->
+			nomatch;
+		_ ->
+			read_song_url(Port, Title, UrlInit)
 	end.
 
 % third line of youtube-dl output: the song's thumbnail
@@ -53,7 +63,11 @@ read_song_thumbnail(Port, Title, Url, ThumbnailInit) ->
 		{Port, {data, {eol, Thumbnail}}} ->
 			end_youtube_dl(Port, {Title, ThumbnailInit ++ Thumbnail, Url});
 		{Port, {data, {noeol, Thumbnail}}} ->
-			read_song_thumbnail(Port, Title, Url, ThumbnailInit ++ Thumbnail)
+			read_song_thumbnail(Port, Title, Url, ThumbnailInit ++ Thumbnail);
+		{Port, {exit_status, _}} ->
+			nomatch;
+		_ ->
+			read_song_thumbnail(Port, Title, Url, ThumbnailInit)
 	end.
 
 -spec end_youtube_dl(Port :: port(), Songtuple :: songtuple()) -> songtuple().
@@ -61,5 +75,9 @@ read_song_thumbnail(Port, Title, Url, ThumbnailInit) ->
 end_youtube_dl(Port, Songtuple) ->
 	receive
 		{Port, {exit_status, 0}} ->
-			Songtuple
+			{match, Songtuple};
+		{Port, _} ->
+			nomatch;
+		_ ->
+			end_youtube_dl(Port, Songtuple)
 	end.

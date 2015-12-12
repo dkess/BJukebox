@@ -37,7 +37,9 @@ websocket_handle(_Data, Req, State) ->
 
 websocket_info({match, Match}, Req, State) ->
     gen_server:cast(manager, {queue, State#state.name, Match}),
-    {ok, Req, State};
+    {reply, [{text, <<"ok">>}], Req, State};
+websocket_info(nomatch, Req, State) ->
+    {reply, [{text, <<"error">>}], Req, State};
 websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
     CurrentJson = case Current of
 		      {CurrentPlayer, CurrentSong} ->

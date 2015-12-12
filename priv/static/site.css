@@ -54,3 +54,9 @@ h2 {
 	margin-right: 10px;
 	margin-bottom: 15px;
 }
+
+.errorbox {
+	color: maroon;
+	display: none;
+	cursor: pointer;
+}

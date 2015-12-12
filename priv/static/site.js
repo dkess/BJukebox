@@ -26,7 +26,21 @@ function songDiv(song) {
 	return div;
 }
 
+function free_songentry() {
+	var input_songurl = document.getElementById("input-songurl");
+	input_songurl.disabled = false;
+	input_songurl.value = "";
+
+	var button_songurl = document.getElementById("b-songurl");
+	button_songurl.disabled = false;
+}
+
 window.onload = function() {
+	// make error messages disappear when we click on them
+	document.getElementById("songurlerror").onclick = function() {
+		this.style.display = "none";
+	}
+	
 	var sock = new WebSocket("ws://bjb.dkess.me/ws");
 
 	sock.onopen = function (event) {
@@ -35,49 +49,56 @@ window.onload = function() {
 	}
 	
 	sock.onmessage = function (event) {
-		console.log(event.data);
-		var serverstate = JSON.parse(event.data);
-
-		var current = serverstate["current"];
-		var span_cp = document.getElementById("currentplayer");
-		var div_cs = document.getElementById("currentsong");
-
-		removeChildren(span_cp);
-		removeChildren(div_cs);
-		if (current) {
-			span_cp.appendChild(document.createTextNode(current["name"]));
-			div_cs.appendChild(songDiv(current["song"]));
+		if (event.data === "ok") {
+			free_songentry();
+		} else if (event.data === "error") {
+			free_songentry();
+			document.getElementById("songurlerror").style.display = "inline";
 		} else {
-			span_cp.appendChild(document.createTextNode("Nothing is currently playing!"));
-		}
+			console.log(event.data);
+			var serverstate = JSON.parse(event.data);
 
-		var queues = serverstate["queues"];
+			var current = serverstate["current"];
+			var span_cp = document.getElementById("currentplayer");
+			var div_cs = document.getElementById("currentsong");
 
-		var div_ql = document.getElementById("queuelist");
-		removeChildren(div_ql);
-
-		for (var i = 0; i < queues.length; i++) {
-			var div_queue = document.createElement("div");
-			div_queue.className = "queue";
-
-			var div_name = document.createElement("div");
-			var span_name = document.createElement("span");
-			span_name.className = "name";
-			span_name.appendChild(document.createTextNode(queues[i]["name"]));
-			div_name.appendChild(span_name);
-			div_queue.appendChild(div_name);
-
-			var div_songlist = document.createElement("div");
-			div_songlist.className = "songlist";
-
-			var songs = queues[i]["songs"];
-			for (var j = 0; j < songs.length; j++) {
-				div_songlist.appendChild(songDiv(songs[j]));
+			removeChildren(span_cp);
+			removeChildren(div_cs);
+			if (current) {
+				span_cp.appendChild(document.createTextNode(current["name"]));
+				div_cs.appendChild(songDiv(current["song"]));
+			} else {
+				span_cp.appendChild(document.createTextNode("Nothing is currently playing!"));
 			}
 
-			div_queue.appendChild(div_songlist);
+			var queues = serverstate["queues"];
 
-			div_ql.appendChild(div_queue);
+			var div_ql = document.getElementById("queuelist");
+			removeChildren(div_ql);
+
+			for (var i = 0; i < queues.length; i++) {
+				var div_queue = document.createElement("div");
+				div_queue.className = "queue";
+
+				var div_name = document.createElement("div");
+				var span_name = document.createElement("span");
+				span_name.className = "name";
+				span_name.appendChild(document.createTextNode(queues[i]["name"]));
+				div_name.appendChild(span_name);
+				div_queue.appendChild(div_name);
+
+				var div_songlist = document.createElement("div");
+				div_songlist.className = "songlist";
+
+				var songs = queues[i]["songs"];
+				for (var j = 0; j < songs.length; j++) {
+					div_songlist.appendChild(songDiv(songs[j]));
+				}
+
+				div_queue.appendChild(div_songlist);
+
+				div_ql.appendChild(div_queue);
+			}
 		}
 	}
 
@@ -90,10 +111,11 @@ window.onload = function() {
 	}
 
 	document.getElementById("b-songurl").onclick = function() {
-		input_songurl = document.getElementById("input-songurl");
+		var input_songurl = document.getElementById("input-songurl");
 		var songurl = input_songurl.value;
 		sock.send("queue "+songurl);
-		input_songurl.value = "";
+		input_songurl.disabled = true;
+		this.disabled = true;
 	}
 
 	window.addEventListener("keydown", function(e) {
