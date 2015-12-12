@@ -41,7 +41,7 @@ websocket_info({match, Match}, Req, State) ->
 websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
     CurrentJson = case Current of
 		      {CurrentPlayer, CurrentSong} ->
-			  [<<"{\"name\":\"">>, list_to_binary(CurrentPlayer), <<"\"">>,
+			  [<<"{\"name\":">>, string_to_bitjson(CurrentPlayer),
 			   <<",\"song\":">>, songtuple_to_bitjson(CurrentSong),
 			   <<"}">>];
 		      noone ->
@@ -50,8 +50,7 @@ websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
     {reply, [{text, [<<"{\"current\":">>, CurrentJson,
 		     <<",\"queues\":">>, list_to_bitjson(fun queueentry_to_bitjson/1, Queues),
 		     <<",\"clients\":">>,
-		     list_to_bitjson(fun(Str) -> [<<"\"">>, list_to_binary(Str), <<"\"">>] end,
-				     ClientNames),
+		     list_to_bitjson(fun string_to_bitjson/1, ClientNames),
 		     <<"}">>]}], Req, State};
 
 websocket_info(Info, Req, State) ->
@@ -68,10 +67,13 @@ list_to_bitjson(_Func, []) ->
     <<"[]">>.
 
 queueentry_to_bitjson({Name, Songs}) ->
-    [<<"{\"name\":\"">>, list_to_binary(Name), <<"\",\"songs\":">>, list_to_bitjson(fun songtuple_to_bitjson/1, Songs), <<"}">>].
+    [<<"{\"name\":">>, string_to_bitjson(Name), <<",\"songs\":">>, list_to_bitjson(fun songtuple_to_bitjson/1, Songs), <<"}">>].
 
 songtuple_to_bitjson({Songname, Thumbnail, _Streamurl}) ->
-    [<<"{\"title\":\"">>, list_to_binary(Songname), <<"\",\"thumb\":\"">>, list_to_binary(Thumbnail), <<"\"}">>].
+    [<<"{\"title\":">>, string_to_bitjson(Songname), <<",\"thumb\":">>, string_to_bitjson(Thumbnail), <<"}">>].
+
+string_to_bitjson(String) ->
+    [<<"\"">>, re:replace(String, "[\"\\\\]", "\\\\&", [global, {return, binary}]), <<"\"">>].
 
 validate_name(Name) ->
     % ugly if statements

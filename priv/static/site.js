@@ -35,6 +35,7 @@ window.onload = function() {
 	}
 	
 	sock.onmessage = function (event) {
+		console.log(event.data);
 		var serverstate = JSON.parse(event.data);
 
 		var current = serverstate["current"];
