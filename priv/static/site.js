@@ -41,7 +41,17 @@ window.onload = function() {
 		this.style.display = "none";
 	}
 	
-	var sock = new WebSocket("ws://bjb.dkess.me/ws");
+	// generate a relative websocket path
+	var protocol = "ws://";
+	if (window.location.protocol === "https:") {
+		protocol = "wss://";
+	}
+	var defaultPath = window.location.pathname;
+	if (!/\/$/.test(defaultPath)) {
+		defaultPath += "/";
+	}
+	defaultPath += "ws";
+	var sock = new WebSocket(protocol + window.location.host + defaultPath);
 
 	sock.onopen = function (event) {
 		document.getElementById("starttext").style.display = "none";
