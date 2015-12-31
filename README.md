@@ -10,6 +10,6 @@ Build
 
 Dependencies
 -----
-* youtube-dl
-* An MPD server running on port 6600, with consume ON, repeat and shuffle OFF
-* The cowboy library (should be automatically downloaded by rebar3)
+* [youtube-dl](https://github.com/rg3/youtube-dl/)
+* An [MPD server](http://www.musicpd.org/) running on port 6600, with consume ON, repeat and shuffle OFF
+* The [cowboy](https://github.com/ninenines/cowboy) library (should be automatically downloaded by rebar3)
