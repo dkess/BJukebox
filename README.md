@@ -4,6 +4,8 @@ BJukebox is a web interface for contributing songs to a live playlist. Songs can
 
 The server uses Erlang to manage websockets with clients, and an MPD server as audio output. 
 
+[Screenshot!](/../screenshots/screenshot.png?raw=true)
+
 Build
 -----
     $ rebar3 compile
