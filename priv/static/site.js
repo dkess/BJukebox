@@ -81,13 +81,17 @@ window.onload = function() {
 				document.getElementById("noplaying").style.display = "none";
 				span_cp.appendChild(document.createTextNode(current["name"]));
 				var div_songdiv = songDiv(current["song"]);
-				var btn_remove = document.createElement("button");
-				btn_remove.className = "b-remove";
-				btn_remove.onclick = function() {
-					console.log("hello");
-					sock.send("skipme");
-				};
-				div_songdiv.appendChild(btn_remove);
+
+				if (current["name"] === name) {
+					var btn_remove = document.createElement("button");
+					btn_remove.className = "b-remove";
+					btn_remove.onclick = function() {
+						console.log("hello");
+						sock.send("skipme");
+					};
+					div_songdiv.appendChild(btn_remove);
+				}
+
 				div_cs.appendChild(div_songdiv);
 			} else {
 				document.getElementById("currentplayer-descr").style.display = "none";
