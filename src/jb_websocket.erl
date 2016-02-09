@@ -17,11 +17,16 @@ websocket_init(_Type, Req, _Opts) ->
 
 websocket_handle({text, Msg}, Req, just_connected) ->
     Name = binary_to_list(Msg),
-    case {validate_name(Name), gen_server:call(manager, {join, Name})} of
-	{true, ok} ->
-	    {ok, Req, #state{name=Name}};
+    case validate_name(Name) of
+	true ->
+	    case gen_server:call(manager, {join, Name}) of
+		ok ->
+		    {reply, [{text, <<"ok">>}], Req, #state{name=Name}};
+		_ ->
+		    {reply, [{text, <<"error taken">>}], Req, just_connected}
+	    end;
 	_ ->
-	    {shutdown, Req, just_connected}
+	    {reply, [{text, <<"error invalid">>}], Req, just_connected}
     end;
 websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
     case string:tokens(binary_to_list(Msg), " ") of
