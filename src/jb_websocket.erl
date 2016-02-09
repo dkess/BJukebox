@@ -28,6 +28,11 @@ websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
 	["queue", Songurl] ->
 	    io:fwrite("sending songurl request from pid ~p~n",[self()]),
 	    fetch_song_sup:query_songurl(Songurl);
+	["remove", QueuePos] ->
+	    gen_server:cast(manager,
+			    {remove, State#state.name, list_to_integer(QueuePos)});
+	["skipme"] ->
+	    gen_server:cast(manager, {skipme, State#state.name});
 	_ ->
 	    nothing
     end,

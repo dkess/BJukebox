@@ -20,20 +20,24 @@ init(_) ->
 handle_call(_Msg, _From, S) ->
 	{noreply, S, 750}.
 
-handle_cast({load_song, Streamurl}, {Idle, Sock}) ->
-	case Idle of
-		idle ->
-			gen_tcp:send(Sock, [<<"noidle\n">>,
-								<<"add ">>,list_to_binary(Streamurl),<<"\n">>]),
-			{noreply, {added_song, Sock}};
-		_ ->
-			{noreply, {Idle, Sock}}
-	end;
+handle_cast(Msg, {noidle, Sock}) ->
+	gen_server:cast(self(), Msg),
+	{noreply, {noidle, Sock}};
+handle_cast({load_song, Streamurl}, {idle, Sock}) ->
+	io:fwrite("loading song"),
+	gen_tcp:send(Sock, [<<"noidle\n">>,
+						<<"add ">>,list_to_binary(Streamurl),<<"\n">>]),
+	{noreply, {added_song, Sock}};
+handle_cast(skip, {idle, Sock}) ->
+	io:fwrite("skipping~n"),
+	gen_tcp:send(Sock, [<<"noidle\n">>,
+						<<"next\n">>]),
+	{noreply, {noidle, Sock}};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
 
 handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
-	io:fwrite("~p~n", [Msg]),
+	io:fwrite("~w, ~p~n", [Idle, Msg]),
 	case Idle of
 		just_connected ->
 			case string:substr(binary_to_list(Msg), 1, 2) =:= "OK" of
@@ -74,6 +78,9 @@ handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 			end;
 		noidle ->
 			case binary_to_list(Msg) of
+				"changed: playlist\n" ->
+					gen_tcp:send(Sock, <<"status\n">>),
+					{noreply, {check_stopped, Sock}};
 				"OK\n" ->
 					io:fwrite("sending idle~n", []),
 					gen_tcp:send(Sock, <<"idle\n">>),

@@ -75,6 +75,39 @@ handle_cast({queue, Name, Songtuple}, S) ->
 														  [{Name, [Songtuple]}])}}
 			end
 	end;
+% Remove the element in QueuePos from Name's queue.  If name does not have a
+% queue, or QueuePos does not exist, do nothing.
+handle_cast({remove, Name, QueuePos}, S) ->
+	gen_server:cast(self(), announce_state),
+	{noreply, case lists:keyfind(Name, 1, S#state.queues) of
+				  {_Name, ThisQueue} ->
+					  case lists:split(QueuePos, ThisQueue) of
+						  % if this is the last element in the queue, remove
+						  % the whole queue
+						  {[], [_|[]]} ->
+							  S#state{queues=lists:keydelete(Name,
+															 1,
+															 S#state.queues)};
+						  {L1, [_|L2]} ->
+							  S#state{queues=lists:keyreplace(Name,
+															  1,
+															  S#state.queues,
+															  {Name, L1 ++ L2})};
+						  _ ->
+							  S
+					  end;
+				  _ ->
+					  S
+			  end};
+handle_cast({skipme, Name}, S) ->
+	case S#state.current of 
+		{Name, _} ->
+			gen_server:cast(jb_mpd, skip);
+		_ ->
+			nothing
+	end,
+	{noreply, S};
+
 handle_cast(announce_state, S) ->
 	ToSend = {S#state.current,
 			  S#state.queues,

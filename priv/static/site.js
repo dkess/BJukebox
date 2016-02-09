@@ -35,6 +35,8 @@ function free_songentry() {
 	button_songurl.disabled = false;
 }
 
+var name = null;
+
 window.onload = function() {
 	// make error messages disappear when we click on them
 	document.getElementById("songurlerror").onclick = function() {
@@ -75,10 +77,21 @@ window.onload = function() {
 			removeChildren(span_cp);
 			removeChildren(div_cs);
 			if (current) {
+				document.getElementById("currentplayer-descr").style.display = "block";
+				document.getElementById("noplaying").style.display = "none";
 				span_cp.appendChild(document.createTextNode(current["name"]));
-				div_cs.appendChild(songDiv(current["song"]));
+				var div_songdiv = songDiv(current["song"]);
+				var btn_remove = document.createElement("button");
+				btn_remove.className = "b-remove";
+				btn_remove.onclick = function() {
+					console.log("hello");
+					sock.send("skipme");
+				};
+				div_songdiv.appendChild(btn_remove);
+				div_cs.appendChild(div_songdiv);
 			} else {
-				span_cp.appendChild(document.createTextNode("Nothing is currently playing!"));
+				document.getElementById("currentplayer-descr").style.display = "none";
+				document.getElementById("noplaying").style.display = "block";
 			}
 
 			var queues = serverstate["queues"];
@@ -86,6 +99,7 @@ window.onload = function() {
 			var div_ql = document.getElementById("queuelist");
 			removeChildren(div_ql);
 
+			var f_queuelist = document.createDocumentFragment();
 			for (var i = 0; i < queues.length; i++) {
 				var div_queue = document.createElement("div");
 				div_queue.className = "queue";
@@ -93,7 +107,8 @@ window.onload = function() {
 				var div_name = document.createElement("div");
 				var span_name = document.createElement("span");
 				span_name.className = "name";
-				span_name.appendChild(document.createTextNode(queues[i]["name"]));
+				var queueName = queues[i]["name"];
+				span_name.appendChild(document.createTextNode(queueName));
 				div_name.appendChild(span_name);
 				div_queue.appendChild(div_name);
 
@@ -102,13 +117,27 @@ window.onload = function() {
 
 				var songs = queues[i]["songs"];
 				for (var j = 0; j < songs.length; j++) {
-					div_songlist.appendChild(songDiv(songs[j]));
+					var div_songdiv = songDiv(songs[j])
+
+					// remove button
+					if (queueName === name) {
+						var btn_remove = document.createElement("button");
+						btn_remove.className = "b-remove";
+						(function(queuePos) {
+							btn_remove.onclick = function() {
+								sock.send("remove "+queuePos);
+							}
+						})(j);
+						div_songdiv.appendChild(btn_remove);
+					}
+					div_songlist.appendChild(div_songdiv);
 				}
 
 				div_queue.appendChild(div_songlist);
 
-				div_ql.appendChild(div_queue);
+				f_queuelist.appendChild(div_queue);
 			}
+			div_ql.appendChild(f_queuelist);
 		}
 	}
 
@@ -118,6 +147,8 @@ window.onload = function() {
 		sock.send(entered_name);
 		document.getElementById("nameentry").style.display = "none";
 		document.getElementById("interface").style.display = "block";
+
+		name = entered_name;
 	}
 
 	document.getElementById("b-songurl").onclick = function() {
