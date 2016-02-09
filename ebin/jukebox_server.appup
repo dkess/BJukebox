@@ -1,0 +1,6 @@
+{"20160209-194631-relflow",
+ [{"0.2.0",
+   [{update,jb_mpd,{advanced,{"0.2.0","20160209-194631-relflow",[]}}},
+    {update,manager,{advanced,{"0.2.0","20160209-194631-relflow",[]}}},
+    {load_module,jb_websocket}]}],
+ [{"0.2.0",[]}]}.
