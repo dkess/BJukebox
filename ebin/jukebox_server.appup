@@ -1,3 +1,7 @@
-{"20160209-230905-relflow",
- [{"20160209-194631-relflow",[{load_module,jb_websocket}]}],
- [{"20160209-194631-relflow",[]}]}.
+{"20160213-012620-relflow",
+ [{"20160209-230905-relflow",
+   [{update,manager,
+            {advanced,{"20160209-230905-relflow","20160213-012620-relflow",
+                       []}}},
+    {load_module,jb_websocket}]}],
+ [{"20160209-230905-relflow",[]}]}.

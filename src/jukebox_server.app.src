@@ -1,7 +1,7 @@
 %% Vsn auto-managed by relflow utility.
 %% DO NOT CHANGE VSN FIELD MANUALLY!
 {application,jukebox_server,
-             [{vsn,"20160209-230905-relflow"},
+             [{vsn,"20160213-012620-relflow"},
               {description,"Web interface to collaboratively queue songs to a live playlist"},
               {registered,[jukebox_server,fetch_song_sup,jb_mpd,
                            jukebox_server_sup,manager]},
