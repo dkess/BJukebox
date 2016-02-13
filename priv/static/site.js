@@ -35,7 +35,11 @@ function free_songentry() {
 	button_songurl.disabled = false;
 }
 
+/** The name of the user */
 var name = null;
+
+/** The WebSocket connection */
+var sock = null
 
 var main_socket_handler = function (event) {
 	if (event.data === "ok") {
@@ -137,7 +141,7 @@ window.onload = function() {
 		defaultPath += "/";
 	}
 	defaultPath += "ws";
-	var sock = new WebSocket(protocol + window.location.host + defaultPath);
+	sock = new WebSocket(protocol + window.location.host + defaultPath);
 
 	sock.onopen = function (event) {
 		document.getElementById("starttext").style.display = "none";
