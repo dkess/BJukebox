@@ -37,7 +37,7 @@ websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
 	    gen_server:cast(manager,
 			    {remove, State#state.name, list_to_integer(QueuePos)});
 	["skipme"] ->
-	    gen_server:cast(manager, {skipme, State#state.name});
+	    gen_server:cast(manager, skipme);
 	_ ->
 	    nothing
     end,

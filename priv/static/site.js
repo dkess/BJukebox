@@ -63,14 +63,12 @@ var main_socket_handler = function (event) {
 			span_cp.appendChild(document.createTextNode(current["name"]));
 			var div_songdiv = songDiv(current["song"]);
 
-			if (current["name"] === name) {
-				var btn_remove = document.createElement("button");
-				btn_remove.className = "b-remove";
-				btn_remove.onclick = function() {
-					sock.send("skipme");
-				};
-				div_songdiv.appendChild(btn_remove);
-			}
+			var btn_remove = document.createElement("button");
+			btn_remove.className = "b-remove";
+			btn_remove.onclick = function() {
+				sock.send("skipme");
+			};
+			div_songdiv.appendChild(btn_remove);
 
 			div_cs.appendChild(div_songdiv);
 		} else {

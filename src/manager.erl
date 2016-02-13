@@ -99,13 +99,8 @@ handle_cast({remove, Name, QueuePos}, S) ->
 				  _ ->
 					  S
 			  end};
-handle_cast({skipme, Name}, S) ->
-	case S#state.current of 
-		{Name, _} ->
-			gen_server:cast(jb_mpd, skip);
-		_ ->
-			nothing
-	end,
+handle_cast(skipme, S) ->
+	gen_server:cast(jb_mpd, skip),
 	{noreply, S};
 
 handle_cast(announce_state, S) ->
