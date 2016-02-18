@@ -20,6 +20,7 @@ get_youtube(Callback, Songurl) ->
 					  {args, ["--prefer-insecure",
 							 "-f", "140/http_mp3_128_url/bestaudio",
 							 "-eg",
+							 "--no-playlist",
 							 "--get-thumbnail",
 							 Songurl]}]),
 	Callback ! read_song_title(Port, "").
