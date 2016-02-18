@@ -33,6 +33,10 @@ handle_cast(skip, {idle, Sock}) ->
 	gen_tcp:send(Sock, [<<"noidle\n">>,
 						<<"next\n">>]),
 	{noreply, {noidle, Sock}};
+handle_cast({setvol, Volume}, {idle, Sock}) ->
+	gen_tcp:send(Sock, [<<"noidle\n">>,
+						<<"setvol ">>, integer_to_binary(round(Volume)), <<"\n">>]),
+	{noreply, {noidle, Sock}};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
 

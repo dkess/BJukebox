@@ -38,6 +38,14 @@ websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
 			    {remove, State#state.name, list_to_integer(QueuePos)});
 	["skipme"] ->
 	    gen_server:cast(manager, skipme);
+	["volumevote", OnTxt] ->
+	    VoteVar = case OnTxt of
+			  "novote" ->
+			      novote;
+			  VoteNumber ->
+			      list_to_integer(VoteNumber)
+		      end,
+	    gen_server:cast(manager, {volumevote, State#state.name, VoteVar});
 	_ ->
 	    nothing
     end,
@@ -50,6 +58,7 @@ websocket_info({match, Match}, Req, State) ->
     {reply, [{text, <<"ok">>}], Req, State};
 websocket_info(nomatch, Req, State) ->
     {reply, [{text, <<"error">>}], Req, State};
+
 websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
     CurrentJson = case Current of
 		      {CurrentPlayer, CurrentSong} ->
@@ -64,6 +73,12 @@ websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
 		     <<",\"clients\":">>,
 		     list_to_bitjson(fun string_to_bitjson/1, ClientNames),
 		     <<"}">>]}], Req, State};
+
+websocket_info({announce_vol, Volume, Voters}, Req, State) ->
+    {reply, [{text, [<<"vol ">>,
+		     integer_to_binary(round(Volume)), <<" ">>,
+		     integer_to_binary(Voters)]}],
+     Req, State};
 
 websocket_info(Info, Req, State) ->
     io:fwrite("Got unknown data ~p~n", [Info]),

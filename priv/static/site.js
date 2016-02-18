@@ -47,6 +47,18 @@ var main_socket_handler = function (event) {
 	} else if (event.data === "error") {
 		free_songentry();
 		document.getElementById("songurlerror").style.display = "inline";
+	} else if (event.data.startsWith("vol ")) {
+		var sdata = event.data.split(" ");
+		var vol = sdata[1];
+		var numvoters = sdata[2];
+
+		var span_currentvol = document.getElementById("currentvol");
+		removeChildren(span_currentvol);
+		span_currentvol.appendChild(document.createTextNode(vol));
+
+		var span_numvoters = document.getElementById("numvoters");
+		removeChildren(span_numvoters);
+		span_numvoters.appendChild(document.createTextNode(numvoters));
 	} else {
 		console.log(event.data);
 		var serverstate = JSON.parse(event.data);
@@ -153,6 +165,7 @@ window.onload = function() {
 			document.getElementById("interface").style.display = "block";
 			
 			this.onmessage = main_socket_handler;
+			updateVote();
 		} else {
 			var span_nameerror = document.getElementById("nameerror");
 			removeChildren(span_nameerror);
@@ -182,6 +195,24 @@ window.onload = function() {
 		input_songurl.disabled = true;
 		this.disabled = true;
 	}
+
+	// volume vote
+	var updateVote = function() {
+		var hasVote = document.getElementById("enable-volumevote").checked;
+		if (hasVote) {
+			var voteVal = document.getElementById("volumerange").value;
+			sock.send("volumevote " + voteVal);
+		} else {
+			sock.send("volumevote novote");
+		}
+	}
+
+	document.getElementById("volumerange").disabled = !document.getElementById("enable-volumevote").checked;
+	document.getElementById("enable-volumevote").onchange = function() {
+		updateVote();
+		document.getElementById("volumerange").disabled = !this.checked;
+	}
+	document.getElementById("volumerange").onchange = updateVote;
 
 	window.addEventListener("keydown", function(e) {
 		var d = e.srcElement || e.target;

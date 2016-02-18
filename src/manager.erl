@@ -10,7 +10,7 @@
 -record(state, {queues :: [{nonempty_string(), [song_fetcher:songtuple()]}],
 				current :: {nonempty_string(), song_fetcher:songtuple()} | noone,
 				want_song :: boolean(),
-				clients :: [nonempty_string()]}).
+				clients :: [{nonempty_string(), pid(), integer() | novote}]}).
 
 start_link() ->
 	gen_server:start_link({local, manager}, ?MODULE, nothing, []).
@@ -25,7 +25,7 @@ handle_call({join, Name}, {FromPid, _Tag}, S) ->
 		false ->
 			gen_server:cast(self(), announce_state),
 			monitor(process, FromPid),
-			{reply, ok, S#state{clients=[{Name, FromPid} | S#state.clients]}}
+			{reply, ok, S#state{clients=[{Name, FromPid, novote} | S#state.clients]}}
 	end;
 handle_call(_Msg, _From, State) ->
 	{noreply, State}.
@@ -79,35 +79,70 @@ handle_cast({queue, Name, Songtuple}, S) ->
 % queue, or QueuePos does not exist, do nothing.
 handle_cast({remove, Name, QueuePos}, S) ->
 	gen_server:cast(self(), announce_state),
-	{noreply, case lists:keyfind(Name, 1, S#state.queues) of
-				  {_Name, ThisQueue} ->
-					  case lists:split(QueuePos, ThisQueue) of
-						  % if this is the last element in the queue, remove
-						  % the whole queue
-						  {[], [_|[]]} ->
-							  S#state{queues=lists:keydelete(Name,
-															 1,
-															 S#state.queues)};
-						  {L1, [_|L2]} ->
-							  S#state{queues=lists:keyreplace(Name,
-															  1,
-															  S#state.queues,
-															  {Name, L1 ++ L2})};
-						  _ ->
-							  S
-					  end;
-				  _ ->
-					  S
-			  end};
+	{noreply,
+	 case lists:keyfind(Name, 1, S#state.queues) of
+		 {_Name, ThisQueue} ->
+			 case lists:split(QueuePos, ThisQueue) of
+				 % if this is the last element in the queue, remove
+				 % the whole queue
+				 {[], [_|[]]} ->
+					 S#state{queues=lists:keydelete(Name, 1, S#state.queues)};
+				 {L1, [_|L2]} ->
+					 S#state{queues=lists:keyreplace(Name, 1, S#state.queues, {Name, L1 ++ L2})};
+				 _ ->
+					 S
+			 end;
+		 _ ->
+			 S
+	 end};
 handle_cast(skipme, S) ->
 	gen_server:cast(jb_mpd, skip),
+	{noreply, S};
+
+handle_cast({volumevote, Name, Volume}, S) ->
+	io:fwrite("volumevote ~p~n", [{Name, Volume}]),
+	gen_server:cast(self(), update_volumes),
+	NewVote = case Volume of
+				  novote ->
+					  novote;
+				  V when V >= 0, V =< 100 ->
+					  V
+			  end,
+	{_N, Pid, _Vv} = lists:keyfind(Name, 1, S#state.clients),
+	{noreply,
+	 S#state{clients=lists:keyreplace(Name, 1, S#state.clients, {Name, Pid, NewVote})}};
+
+handle_cast(update_volumes, S) ->
+	{TotalV, Length} = lists:foldl(
+						 fun({_Name, _Pid, V}, {Total, L}) ->
+								 case V of
+									 novote ->
+										 {Total, L};
+									 Vote ->
+										 {Total + Vote, L+1}
+								 end
+						 end,
+						 {0, 0}, S#state.clients),
+	AvgV = case {TotalV, Length} of
+			   {_TV, 0} ->
+				   io:fwrite("update volumes, divide by zero~n"),
+				   70; % default volume to avoid dividing by zero
+			   {TV, T} ->
+				   TV / T
+		   end,
+	gen_server:cast(jb_mpd, {setvol, AvgV}),
+	gen_server:cast(self(), {send_to_all, {announce_vol, AvgV, Length}}),
+	{noreply, S};
+
+handle_cast({send_to_all, Msg}, S) ->
+	lists:map(fun({_Name, Pid, _Vv}) -> Pid ! Msg end, S#state.clients),
 	{noreply, S};
 
 handle_cast(announce_state, S) ->
 	ToSend = {S#state.current,
 			  S#state.queues,
-			  lists:map(fun({Name, _Pid}) -> Name end, S#state.clients)},
-	lists:map(fun({_Name, Pid}) -> Pid ! {manager_state, ToSend} end, S#state.clients),
+			  lists:map(fun({Name, _Pid, _Vv}) -> Name end, S#state.clients)},
+	gen_server:cast(self(), {send_to_all, {manager_state, ToSend}}),
 	{noreply, S};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
@@ -115,6 +150,7 @@ handle_cast(_Msg, S) ->
 % client has disconnected
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, S) ->
 	io:fwrite("client ~p disconnected~n", [Pid]),
+	gen_server:cast(self(), update_volumes),
 	{noreply, S#state{clients=lists:keydelete(Pid, 2, S#state.clients)}};
 handle_info(_Msg, S) ->
 	{noreply, S, 750}.
