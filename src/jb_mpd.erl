@@ -31,7 +31,7 @@ handle_cast({load_song, Streamurl}, {idle, Sock}) ->
 handle_cast(skip, {idle, Sock}) ->
 	io:fwrite("skipping~n"),
 	gen_tcp:send(Sock, [<<"noidle\n">>,
-						<<"next\n">>]),
+						<<"clear\n">>]),
 	{noreply, {noidle, Sock}};
 handle_cast({setvol, Volume}, {idle, Sock}) ->
 	gen_tcp:send(Sock, [<<"noidle\n">>,
