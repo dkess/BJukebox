@@ -8,15 +8,14 @@
 		 terminate/2]).
 
 -record(state, {queues :: [{nonempty_string(), [song_fetcher:songtuple()]}],
-				current :: {nonempty_string(), song_fetcher:songtuple()} | noone,
-				want_song :: boolean(),
+				current :: {nonempty_string(), song_fetcher:songtuple()} | noone | disconnected,
 				clients :: [{nonempty_string(), pid(), integer() | novote}]}).
 
 start_link() ->
 	gen_server:start_link({local, manager}, ?MODULE, nothing, []).
 
 init(_) ->
-	{ok, #state{queues=[], current=noone, want_song=false, clients=[]}}.
+	{ok, #state{queues=[], current=disconnected, clients=[]}}.
 
 handle_call({join, Name}, {FromPid, _Tag}, S) ->
 	case lists:keymember(Name, 1, S#state.clients) of
@@ -34,7 +33,7 @@ handle_cast(want_song, S) ->
 	gen_server:cast(self(), announce_state),
 	case S#state.queues of
 		[] ->
-			{noreply, S#state{want_song=true, current=noone}};
+			{noreply, S#state{current=noone}};
 		[{NextPlayer, [NextSongtuple | OtherSongs]} | Rest] ->
 			gen_server:cast(jb_mpd, {load_song, element(3, NextSongtuple)}),
 			ToAppend = case OtherSongs of
@@ -43,8 +42,7 @@ handle_cast(want_song, S) ->
 						   _ ->
 							   [{NextPlayer, OtherSongs}]
 					   end,
-			{noreply, S#state{want_song=false,
-							  queues=lists:append(Rest, ToAppend),
+			{noreply, S#state{queues=lists:append(Rest, ToAppend),
 							  current={NextPlayer, NextSongtuple}}}
 	end;
 
@@ -61,11 +59,11 @@ handle_cast({queue, Name, Songtuple}, S) ->
 		false ->
 			case S#state.queues of
 				[] ->
-					case S#state.want_song of
-						true ->
-							gen_server:cast(self(), want_song);
+					case S#state.current of
+						{_CurrentPlayer, _CurrentSongTuple} ->
+							nothing;
 						_ ->
-							nothing
+							gen_server:cast(self(), want_song)
 					end,
 					{noreply, S#state{queues=[{Name, [Songtuple]}]}};
 				[{TopPlayer, _}]  when TopPlayer =:= element(1, S#state.current) ->
@@ -144,6 +142,10 @@ handle_cast(announce_state, S) ->
 			  lists:map(fun({Name, _Pid, _Vv}) -> Name end, S#state.clients)},
 	gen_server:cast(self(), {send_to_all, {manager_state, ToSend}}),
 	{noreply, S};
+
+handle_cast(disconnected, S) ->
+	gen_server:cast(self(), announce_state),
+	{noreply, S#state{current = disconnected}};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
 

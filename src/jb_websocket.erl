@@ -66,7 +66,9 @@ websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
 			   <<",\"song\":">>, songtuple_to_bitjson(CurrentSong),
 			   <<"}">>];
 		      noone ->
-			  <<"false">>
+			  string_to_bitjson("noone");
+		      disconnected ->
+			  string_to_bitjson("disconnected")
 		  end,
     {reply, [{text, [<<"{\"current\":">>, CurrentJson,
 		     <<",\"queues\":">>, list_to_bitjson(fun queueentry_to_bitjson/1, Queues),

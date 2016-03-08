@@ -69,9 +69,18 @@ var main_socket_handler = function (event) {
 
 		removeChildren(span_cp);
 		removeChildren(div_cs);
-		if (current) {
+		if (current === "noone") {
+			document.getElementById("currentplayer-descr").style.display = "none";
+			document.getElementById("disconnected").style.display = "none";
+			document.getElementById("noplaying").style.display = "block";
+		} else if (current === "disconnected") {
+			document.getElementById("currentplayer-descr").style.display = "none";
+			document.getElementById("disconnected").style.display = "block";
+			document.getElementById("noplaying").style.display = "none";
+		} else {
 			document.getElementById("currentplayer-descr").style.display = "block";
 			document.getElementById("noplaying").style.display = "none";
+			document.getElementById("disconnected").style.display = "none";
 			span_cp.appendChild(document.createTextNode(current["name"]));
 			var div_songdiv = songDiv(current["song"]);
 
@@ -83,9 +92,6 @@ var main_socket_handler = function (event) {
 			div_songdiv.appendChild(btn_remove);
 
 			div_cs.appendChild(div_songdiv);
-		} else {
-			document.getElementById("currentplayer-descr").style.display = "none";
-			document.getElementById("noplaying").style.display = "block";
 		}
 
 		var queues = serverstate["queues"];

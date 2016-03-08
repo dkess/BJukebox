@@ -72,7 +72,7 @@ h2 {
   margin-left: 0.8em;
 }
 
-#noplaying {
+#noplaying, #disconnected {
   display: none;
   font-weight: bold;
 }

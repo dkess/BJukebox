@@ -6,20 +6,32 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3,
 		 terminate/2]).
 
+-define(RESTART_WAIT_MILLIS, 4000).
+
 start_link() ->
 	gen_server:start_link({local, jb_mpd}, ?MODULE, nothing, []).
 
 init(_) ->
-	{ok, Sock} = gen_tcp:connect("127.0.0.1", 6600,
-								 [binary,
-								  {active, true},
-								  {packet, line},
-								  {keepalive, true}]),
-	{ok, {just_connected, Sock}}.
+	gen_server:cast(self(), connect),
+	{ok, disconnected}.
 
 handle_call(_Msg, _From, S) ->
 	{noreply, S, 750}.
 
+handle_cast(connect, disconnected) ->
+	io:fwrite("connecting~n"),
+	case gen_tcp:connect("127.0.0.1", 6600,
+						 [binary,
+						  {active, true},
+						  {packet, line},
+						  {keepalive, true}]) of
+		{ok, Sock} ->
+			{noreply, {just_connected, Sock}};
+		{error, _Reason} ->
+			io:fwrite("connection failed~n"),
+			erlang:send_after(?RESTART_WAIT_MILLIS, self(), reconnect),
+			{noreply, disconnected}
+	end;
 handle_cast(Msg, {noidle, Sock}) ->
 	gen_server:cast(self(), Msg),
 	{noreply, {noidle, Sock}};
@@ -39,6 +51,10 @@ handle_cast({setvol, Volume}, {idle, Sock}) ->
 	{noreply, {noidle, Sock}};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
+
+handle_info(reconnect, S) ->
+	gen_server:cast(self(), connect),
+	{noreply, S};
 
 handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 	io:fwrite("~w, ~p~n", [Idle, Msg]),
@@ -93,6 +109,10 @@ handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 					{noreply, {Idle, Sock}}
 			end
 	end;
+handle_info({tcp_closed,_Sock}, _S) ->
+	gen_server:cast(manager, lost_conn),
+	gen_server:cast(self(), connect),
+	{noreply, disconnected};
 handle_info(_Msg, S) ->
 	{noreply, S, 750}.
 
