@@ -1,10 +1,9 @@
-{"20160308-212452-relflow",
- [{"20160218-013302-relflow",
+{"20160309-015344-relflow",
+ [{"20160308-212452-relflow",
    [{update,jb_mpd,
-            {advanced,{"20160218-013302-relflow","20160308-212452-relflow",
+            {advanced,{"20160308-212452-relflow","20160309-015344-relflow",
                        []}}},
     {update,manager,
-            {advanced,{"20160218-013302-relflow","20160308-212452-relflow",
-                       []}}},
-    {load_module,jb_websocket}]}],
- [{"20160218-013302-relflow",[]}]}.
+            {advanced,{"20160308-212452-relflow","20160309-015344-relflow",
+                       []}}}]}],
+ [{"20160308-212452-relflow",[]}]}.
