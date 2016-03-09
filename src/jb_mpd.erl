@@ -26,6 +26,7 @@ handle_cast(connect, disconnected) ->
 						  {packet, line},
 						  {keepalive, true}]) of
 		{ok, Sock} ->
+			gen_server:cast(manager, got_conn),
 			{noreply, {just_connected, Sock}};
 		{error, _Reason} ->
 			io:fwrite("connection failed~n"),

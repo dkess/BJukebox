@@ -60,10 +60,10 @@ handle_cast({queue, Name, Songtuple}, S) ->
 			case S#state.queues of
 				[] ->
 					case S#state.current of
-						{_CurrentPlayer, _CurrentSongTuple} ->
-							nothing;
+						noone ->
+							gen_server:cast(self(), want_song);
 						_ ->
-							gen_server:cast(self(), want_song)
+							nothing
 					end,
 					{noreply, S#state{queues=[{Name, [Songtuple]}]}};
 				[{TopPlayer, _}]  when TopPlayer =:= element(1, S#state.current) ->
@@ -143,9 +143,12 @@ handle_cast(announce_state, S) ->
 	gen_server:cast(self(), {send_to_all, {manager_state, ToSend}}),
 	{noreply, S};
 
-handle_cast(disconnected, S) ->
+handle_cast(lost_conn, S) ->
 	gen_server:cast(self(), announce_state),
 	{noreply, S#state{current = disconnected}};
+handle_cast(got_conn, S) ->
+	gen_server:cast(self(), announce_state),
+	{noreply, S#state{current = noone}};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
 
