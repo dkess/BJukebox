@@ -197,9 +197,11 @@ window.onload = function() {
 	document.getElementById("b-songurl").onclick = function() {
 		var input_songurl = document.getElementById("input-songurl");
 		var songurl = input_songurl.value;
-		sock.send("queue "+songurl);
-		input_songurl.disabled = true;
-		this.disabled = true;
+		if (songurl.trim()) {
+			sock.send("queue "+songurl);
+			input_songurl.disabled = true;
+			this.disabled = true;
+		}
 	}
 
 	// volume vote

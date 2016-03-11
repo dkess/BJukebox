@@ -30,7 +30,7 @@ websocket_handle({text, Msg}, Req, just_connected) ->
     end;
 websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
     case string:tokens(binary_to_list(Msg), " ") of
-	["queue", Songurl] ->
+	["queue", Songurl | _] ->
 	    % Fetch the song, and wait to get a result back.
 	    % When it does come back, it will come in the form of a
 	    % {match, Songtuple} raw message, handled in websocket_info.
