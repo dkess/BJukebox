@@ -68,6 +68,9 @@ handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 			end;
 		idle ->
 			case binary_to_list(Msg) of
+				"changed: player\n" ->
+					gen_tcp:send(Sock, <<"status\n">>),
+					{noreply, {check_stopped, Sock}};
 				"changed: playlist\n" ->
 					gen_tcp:send(Sock, <<"status\n">>),
 					{noreply, {check_stopped, Sock}};
@@ -97,6 +100,15 @@ handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 					gen_tcp:send(Sock, <<"play\n">>),
 					{noreply, {noidle, Sock}}
 			end;
+		found_error ->
+			case binary_to_list(Msg) of
+				"OK\n" ->
+					gen_tcp:send(Sock, <<"clearerror\n">>),
+					gen_server:cast(self(), skip),
+					{noreply, {noidle, Sock}};
+				_ ->
+					{noreply, {Idle, Sock}}
+			end;
 		noidle ->
 			case binary_to_list(Msg) of
 				"changed: playlist\n" ->
@@ -106,8 +118,14 @@ handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 					io:fwrite("sending idle~n", []),
 					gen_tcp:send(Sock, <<"idle\n">>),
 					{noreply, {idle, Sock}};
-				_ ->
-					{noreply, {Idle, Sock}}
+				LMsg ->
+					SError = "error:",
+					case string:substr(LMsg, 1, length(SError)) of
+						SError ->
+							{noreply, {found_error, Sock}};
+						_ ->
+							{noreply, {Idle, Sock}}
+					end
 			end
 	end;
 handle_info({tcp_closed,_Sock}, _S) ->
