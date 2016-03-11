@@ -1,7 +1,8 @@
 -module(song_fetcher).
 
 -export([start_link/1]).
--export([get_youtube/2]).
+-export([get_metadata/2, get_streamurl/2]).
+-export([get_metadata_worker/2, get_streamurl_worker/2]).
 
 % Order of songtuple: Title, Thumbnail, URL
 -type songtuple() :: {string(), string(), string()}.
@@ -10,75 +11,108 @@
 start_link(Songurl) ->
 	spawn_link(?MODULE, get_youtube, [self(), Songurl]).
 
--spec get_youtube(Callback :: pid(), Songurl :: string()) ->
-	nomatch | {match, songtuple()}.
-get_youtube(Callback, Songurl) ->
-	io:fwrite("get youtube called~n", []),
+get_metadata(Callback, Songurl) ->
+	process_flag(trap_exit, true),
+	Worker = spawn_link(?MODULE, get_metadata_worker, [self(), Songurl]),
+	wait_for_result(Callback, Worker).
+
+get_metadata_worker(Boss, Songurl) ->
 	Port = open_port({spawn_executable, os:find_executable("youtube-dl")},
 					 [{line, 2000},
 					  exit_status,
+					  stderr_to_stdout,
 					  {args, ["--prefer-insecure",
-							 "-f", "140/http_mp3_128_url/bestaudio",
-							 "-eg",
-							 "--no-playlist",
-							 "--get-thumbnail",
-							 Songurl]}]),
-	Callback ! read_song_title(Port, "").
+							  "--no-playlist",
+							  "--get-title",
+							  "--get-thumbnail",
+							  Songurl]}]),
+	{Title, Thumbnail} = read_song_title(Port, ""),
+	Boss ! {Title, Thumbnail, Songurl}.
+
+get_streamurl(Callback, Songurl) ->
+	process_flag(trap_exit, true),
+	Worker = spawn_link(?MODULE, get_streamurl_worker, [self(), Songurl]),
+	wait_for_result(Callback, Worker).
+
+get_streamurl_worker(Boss, Songurl) ->
+	Port = open_port({spawn_executable, os:find_executable("youtube-dl")},
+					 [{line, 2000},
+					  exit_status,
+					  stderr_to_stdout,
+					  {args, ["--prefer-insecure",
+							  "-f", "140/http_mp3_128_url/bestaudio",
+							  "--get-url",
+							  "--no-playlist",
+							  Songurl]}]),
+	Boss ! read_streamurl(Port, "").
+
+wait_for_result(Callback, Worker) ->
+	receive
+		{'EXIT', Worker, _Reason} ->
+			io:fwrite("got error"),
+			Callback ! nomatch;
+		Result ->
+			io:fwrite("got result ~p~n", [Result]),
+			Callback ! {match, Result}
+	after 6000 ->
+			  io:fwrite("timed out"),
+			  Callback ! nomatch
+	end.
 
 
-
-% first line of youtube-dl output: the song's title
--spec read_song_title(Port :: port(), TitleInit :: string()) -> songtuple().
+% first line of youtube-dl metadata output: the song's title
+-spec read_song_title(Port :: port(), TitleInit :: string()) -> {string(), string()}.
 read_song_title(Port, TitleInit) ->
 	receive
 		{Port, {data, {eol, Title}}} ->
-			read_song_url(Port, TitleInit ++ Title, "");
+			read_song_thumbnail(Port, TitleInit ++ Title, "");
 		{Port, {data, {noeol, Title}}} ->
 			read_song_title(Port, TitleInit ++ Title);
-		{Port, {exit_status, _}} ->
-			nomatch;
 		_ ->
-			read_song_title(Port, TitleInit)
+			exit(unexpected_output)
 	end.
 
-% second line of youtube-dl output: the song's url
--spec read_song_url(Port :: port(), Title :: string(),
-					UrlInit :: string()) -> songtuple().
-read_song_url(Port, Title, UrlInit) ->
-	receive
-		{Port, {data, {eol, Url}}} ->
-			read_song_thumbnail(Port, Title, UrlInit ++ Url, "");
-		{Port, {data, {noeol, Url}}} ->
-			read_song_url(Port, Title, UrlInit ++ Url);
-		{Port, {exit_status, _}} ->
-			nomatch;
-		_ ->
-			read_song_url(Port, Title, UrlInit)
-	end.
-
-% third line of youtube-dl output: the song's thumbnail
--spec read_song_thumbnail(Port :: port(), Title :: string(), Url :: string(),
-						  ThumbnailInit :: string()) -> songtuple().
-read_song_thumbnail(Port, Title, Url, ThumbnailInit) ->
+% second line of youtube-dl metadata output: the song's thumbnail
+-spec read_song_thumbnail(Port :: port(), Title :: string(),
+						  ThumbnailInit :: string()) -> {string(), string()}.
+read_song_thumbnail(Port, Title, ThumbnailInit) ->
 	receive
 		{Port, {data, {eol, Thumbnail}}} ->
-			end_youtube_dl(Port, {Title, ThumbnailInit ++ Thumbnail, Url});
+			end_get_metadata(Port, {Title, ThumbnailInit ++ Thumbnail});
 		{Port, {data, {noeol, Thumbnail}}} ->
-			read_song_thumbnail(Port, Title, Url, ThumbnailInit ++ Thumbnail);
-		{Port, {exit_status, _}} ->
-			nomatch;
+			read_song_thumbnail(Port, Title, ThumbnailInit ++ Thumbnail);
 		_ ->
-			read_song_thumbnail(Port, Title, Url, ThumbnailInit)
+			exit(unexpected_output)
 	end.
 
--spec end_youtube_dl(Port :: port(), Songtuple :: songtuple()) -> songtuple().
+-spec end_get_metadata(Port :: port(), Metadata :: {string(), string()}) ->
+	{string(), string()}.
 % we expect a successful exit_status
-end_youtube_dl(Port, Songtuple) ->
+end_get_metadata(Port, Metadata) ->
 	receive
 		{Port, {exit_status, 0}} ->
-			{match, Songtuple};
-		{Port, _} ->
-			nomatch;
+			Metadata;
 		_ ->
-			end_youtube_dl(Port, Songtuple)
+			exit(unexpected_output)
+	end.
+
+% youtube-dl output: the song's url
+-spec read_streamurl(Port :: port(), UrlInit :: string()) -> string().
+read_streamurl(Port, UrlInit) ->
+	receive
+		{Port, {data, {eol, Url}}} ->
+			end_streamurl(Port, UrlInit ++ Url);
+		{Port, {data, {noeol, Url}}} ->
+			read_streamurl(Port, UrlInit ++ Url);
+		_ ->
+			exit(unexpected_output)
+	end.
+
+-spec end_streamurl(Port :: port(), Url :: string()) -> string().
+end_streamurl(Port, Url) ->
+	receive
+		{Port, {exit_status, 0}} ->
+			Url;
+		_ ->
+			exit(unexpected_output)
 	end.

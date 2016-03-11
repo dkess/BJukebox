@@ -31,8 +31,10 @@ websocket_handle({text, Msg}, Req, just_connected) ->
 websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
     case string:tokens(binary_to_list(Msg), " ") of
 	["queue", Songurl] ->
-	    io:fwrite("sending songurl request from pid ~p~n",[self()]),
-	    fetch_song_sup:query_songurl(Songurl);
+	    % Fetch the song, and wait to get a result back.
+	    % When it does come back, it will come in the form of a
+	    % {match, Songtuple} raw message, handled in websocket_info.
+	    fetch_song_sup:get_metadata(Songurl);
 	["remove", QueuePos] ->
 	    gen_server:cast(manager,
 			    {remove, State#state.name, list_to_integer(QueuePos)});
@@ -83,7 +85,7 @@ websocket_info({announce_vol, Volume, Voters}, Req, State) ->
      Req, State};
 
 websocket_info(Info, Req, State) ->
-    io:fwrite("Got unknown data ~p~n", [Info]),
+    io:fwrite("Client got unknown data ~p~n", [Info]),
     {ok, Req, State}.
 
 websocket_terminate(_Reason, _Req, State) ->
@@ -98,8 +100,11 @@ list_to_bitjson(_Func, []) ->
 queueentry_to_bitjson({Name, Songs}) ->
     [<<"{\"name\":">>, string_to_bitjson(Name), <<",\"songs\":">>, list_to_bitjson(fun songtuple_to_bitjson/1, Songs), <<"}">>].
 
-songtuple_to_bitjson({Songname, Thumbnail, _Streamurl}) ->
-    [<<"{\"title\":">>, string_to_bitjson(Songname), <<",\"thumb\":">>, string_to_bitjson(Thumbnail), <<"}">>].
+songtuple_to_bitjson({Songname, Thumbnail, Songurl}) ->
+    [<<"{\"title\":">>, string_to_bitjson(Songname),
+     <<",\"thumb\":">>, string_to_bitjson(Thumbnail),
+     <<",\"url\":">>, string_to_bitjson(Songurl),
+     <<"}">>].
 
 string_to_bitjson(String) ->
     [<<"\"">>, re:replace(String, "[\"\\\\]", "\\\\&", [global, {return, binary}]), <<"\"">>].

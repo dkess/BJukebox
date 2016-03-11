@@ -35,7 +35,7 @@ handle_cast(want_song, S) ->
 		[] ->
 			{noreply, S#state{current=noone}};
 		[{NextPlayer, [NextSongtuple | OtherSongs]} | Rest] ->
-			gen_server:cast(jb_mpd, {load_song, element(3, NextSongtuple)}),
+			fetch_song_sup:get_streamurl(element(3, NextSongtuple)),
 			ToAppend = case OtherSongs of
 						   [] ->
 							   [];
@@ -152,6 +152,13 @@ handle_cast(got_conn, S) ->
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
 
+% we got the streaurl of a song, now play it
+handle_info({match, Streamurl}, S) ->
+	gen_server:cast(jb_mpd, {load_song, Streamurl}),
+	{noreply, S};
+handle_info(nomatch, S) ->
+	gen_server:cast(self(), want_song),
+	{noreply, S};
 % client has disconnected
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, S) ->
 	io:fwrite("client ~p disconnected~n", [Pid]),
