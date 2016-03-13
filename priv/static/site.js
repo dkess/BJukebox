@@ -11,11 +11,17 @@ function songDiv(song) {
 	var div_image = document.createElement("div");
 	div_image.className = "song-thumb";
 
+	var a_thumb = document.createElement("a");
+	a_thumb.href = song["url"];
+	a_thumb.target = "_blank";
+
 	var img_thumb = document.createElement("img");
 	img_thumb.src = song["thumb"];
 
 	div_image.appendChild(img_thumb);
-	div.appendChild(div_image);
+
+	a_thumb.appendChild(div_image);
+	div.appendChild(a_thumb);
 
 	var div_songtitle = document.createElement("div");
 	div_songtitle.className = "songtitle";
