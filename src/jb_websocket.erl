@@ -40,6 +40,10 @@ websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
 			    {remove, State#state.name, list_to_integer(QueuePos)});
 	["skipme"] ->
 	    gen_server:cast(manager, skipme);
+	["volup"] ->
+	    gen_server:cast(jb_mpd, {voldelta, 2});
+	["voldown"] ->
+	    gen_server:cast(jb_mpd, {voldelta, -2});
 	["volumevote", OnTxt] ->
 	    VoteVar = case OnTxt of
 			  "novote" ->

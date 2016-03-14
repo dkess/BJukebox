@@ -56,15 +56,10 @@ var main_socket_handler = function (event) {
 	} else if (event.data.startsWith("vol ")) {
 		var sdata = event.data.split(" ");
 		var vol = sdata[1];
-		var numvoters = sdata[2];
 
 		var span_currentvol = document.getElementById("currentvol");
 		removeChildren(span_currentvol);
 		span_currentvol.appendChild(document.createTextNode(vol));
-
-		var span_numvoters = document.getElementById("numvoters");
-		removeChildren(span_numvoters);
-		span_numvoters.appendChild(document.createTextNode(numvoters));
 	} else {
 		console.log(event.data);
 		var serverstate = JSON.parse(event.data);
@@ -177,7 +172,6 @@ window.onload = function() {
 			document.getElementById("interface").style.display = "block";
 			
 			this.onmessage = main_socket_handler;
-			updateVote();
 		} else {
 			var span_nameerror = document.getElementById("nameerror");
 			removeChildren(span_nameerror);
@@ -195,7 +189,6 @@ window.onload = function() {
 
 	document.getElementById("b-entername").onclick = function() {
 		var entered_name = document.getElementById("input-name").value;
-		// TODO: validate name
 		sock.send(entered_name);
 		name = entered_name;
 	}
@@ -210,23 +203,12 @@ window.onload = function() {
 		}
 	}
 
-	// volume vote
-	var updateVote = function() {
-		var hasVote = document.getElementById("enable-volumevote").checked;
-		if (hasVote) {
-			var voteVal = document.getElementById("volumerange").value;
-			sock.send("volumevote " + voteVal);
-		} else {
-			sock.send("volumevote novote");
-		}
+	document.getElementById("b-voldown").onclick = function() {
+		sock.send("voldown");
 	}
-
-	document.getElementById("volumerange").disabled = !document.getElementById("enable-volumevote").checked;
-	document.getElementById("enable-volumevote").onchange = function() {
-		updateVote();
-		document.getElementById("volumerange").disabled = !this.checked;
+	document.getElementById("b-volup").onclick = function() {
+		sock.send("volup");
 	}
-	document.getElementById("volumerange").onchange = updateVote;
 
 	window.addEventListener("keydown", function(e) {
 		var d = e.srcElement || e.target;

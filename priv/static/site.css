@@ -45,31 +45,14 @@ h2 {
 	align-self: center;
 }
 
-#volumevote {
+#volumecontrols {
   margin-top: 1em;
   display: flex;
   align-items: center;
 }
 
-#volumevote label {
-  display: block;
-  padding-left: 15px;
-  text-indent: -15px;
-}
-
-#volumevote input[type=checkbox] {
-  width: 13px;
-  height: 13px;
-  padding: 0;
-  margin:0;
-  vertical-align: bottom;
-  position: relative;
-  top: -1px;
-  margin-right: 0.5em;
-}
-
-#volumevote input[type=range] {
-  margin-left: 0.8em;
+#b-voldown {
+  margin-right: 1em;
 }
 
 #noplaying, #disconnected {

@@ -50,6 +50,10 @@ handle_cast({setvol, Volume}, {idle, Sock}) ->
 	gen_tcp:send(Sock, [<<"noidle\n">>,
 						<<"setvol ">>, integer_to_binary(round(Volume)), <<"\n">>]),
 	{noreply, {noidle, Sock}};
+handle_cast({voldelta, Delta}, {idle, Sock}) ->
+	gen_tcp:send(Sock, [<<"noidle\n">>,
+						<<"status\n">>]),
+	{noreply, {{voldelta, Delta}, Sock}};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
 
@@ -105,6 +109,31 @@ handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 				"OK\n" ->
 					gen_tcp:send(Sock, <<"clearerror\n">>),
 					gen_server:cast(self(), skip),
+					{noreply, {noidle, Sock}};
+				_ ->
+					{noreply, {Idle, Sock}}
+			end;
+		{voldelta, Delta} ->
+			case string:tokens(binary_to_list(Msg), " ") of
+				["volume:", CurrentVol] ->
+					{noreply, {{newvol,
+								list_to_integer(string:strip(CurrentVol, right, $\n))
+								+ Delta},
+							   Sock}};
+				_ ->
+					{noreply, {Idle, Sock}}
+			end;
+		{newvol, Newvol} ->
+			case binary_to_list(Msg) of
+				"OK\n" ->
+					Vol = case Newvol of
+							  V when V < 0 -> 0;
+							  V when V > 100 -> 100;
+							  V -> V
+						  end,
+					gen_tcp:send(Sock, [<<"setvol ">>,
+										integer_to_binary(Vol),
+										<<"\n">>]),
 					{noreply, {noidle, Sock}};
 				_ ->
 					{noreply, {Idle, Sock}}

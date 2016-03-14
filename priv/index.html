@@ -23,8 +23,9 @@
 		<label>Queue song URL: <input id="input-songurl" type="text" autocomplete="url"/></label>
 		<button id="b-songurl">Submit</button>
 		<span id="songurlerror" class="errorbox">There was an error!</span>
-		<div id="volumevote">
-			<label title="Check this box to vote on what the volume will be. The volume will be set to the average of all votes."><input type="checkbox" id="enable-volumevote"/>Volume Vote:</label> <input type="range" id="volumerange" disabled="disabled"/> <span id="votestatus">Current Volume: <span id="currentvol">?</span>% with <span id="numvoters">?</span> voters.</span>
+		<div id="volumecontrols">
+			<button id="b-voldown">Decrease Volume</button>
+			<button id="b-volup">Increase Volume</button>
 		</div>
 		<div id="nowplaying">
 			<h2>Now Playing</h2>
