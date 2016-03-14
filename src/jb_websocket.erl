@@ -82,10 +82,9 @@ websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
 		     list_to_bitjson(fun string_to_bitjson/1, ClientNames),
 		     <<"}">>]}], Req, State};
 
-websocket_info({announce_vol, Volume, Voters}, Req, State) ->
+websocket_info({announce_vol, Volume}, Req, State) ->
     {reply, [{text, [<<"vol ">>,
-		     integer_to_binary(round(Volume)), <<" ">>,
-		     integer_to_binary(Voters)]}],
+		     integer_to_binary(round(Volume))]}],
      Req, State};
 
 websocket_info(Info, Req, State) ->

@@ -51,7 +51,7 @@ h2 {
   align-items: center;
 }
 
-#b-voldown {
+#b-voldown, #b-volup {
   margin-right: 1em;
 }
 

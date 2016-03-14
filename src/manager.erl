@@ -22,6 +22,7 @@ handle_call({join, Name}, {FromPid, _Tag}, S) ->
 		true ->
 			{reply, {error, nametaken}, S};
 		false ->
+			gen_server:cast(jb_mpd, want_volume),
 			gen_server:cast(self(), announce_state),
 			monitor(process, FromPid),
 			{reply, ok, S#state{clients=[{Name, FromPid} | S#state.clients]}}
@@ -106,6 +107,10 @@ handle_cast(announce_state, S) ->
 			  S#state.queues,
 			  lists:map(fun({Name, _Pid}) -> Name end, S#state.clients)},
 	gen_server:cast(self(), {send_to_all, {manager_state, ToSend}}),
+	{noreply, S};
+
+handle_cast({volume, Vol}, S) ->
+	gen_server:cast(self(), {send_to_all, {announce_vol, Vol}}),
 	{noreply, S};
 
 handle_cast(lost_conn, S) ->

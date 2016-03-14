@@ -54,6 +54,10 @@ handle_cast({voldelta, Delta}, {idle, Sock}) ->
 	gen_tcp:send(Sock, [<<"noidle\n">>,
 						<<"status\n">>]),
 	{noreply, {{voldelta, Delta}, Sock}};
+handle_cast(want_volume, {idle, Sock}) ->
+	gen_tcp:send(Sock, [<<"noidle\n">>,
+						<<"status\n">>]),
+	{noreply, {want_volume, Sock}};
 handle_cast(_Msg, S) ->
 	{noreply, S, 750}.
 
@@ -134,6 +138,16 @@ handle_info({tcp, _Sock, Msg}, {Idle, Sock}) ->
 					gen_tcp:send(Sock, [<<"setvol ">>,
 										integer_to_binary(Vol),
 										<<"\n">>]),
+					gen_server:cast(manager, {volume, Vol}),
+					{noreply, {noidle, Sock}};
+				_ ->
+					{noreply, {Idle, Sock}}
+			end;
+		want_volume ->
+			case string:tokens(binary_to_list(Msg), " ") of
+				["volume:", CurrentVol] ->
+					Vol = list_to_integer(string:strip(CurrentVol, right, $\n)),
+					gen_server:cast(manager, {volume, Vol}),
 					{noreply, {noidle, Sock}};
 				_ ->
 					{noreply, {Idle, Sock}}
