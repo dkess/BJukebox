@@ -1,10 +1,10 @@
-{"20160314-192904-relflow",
- [{"20160314-040833-relflow",
+{"20160318-033626-relflow",
+ [{"20160314-192904-relflow",
    [{update,jb_mpd,
-            {advanced,{"20160314-040833-relflow","20160314-192904-relflow",
+            {advanced,{"20160314-192904-relflow","20160318-033626-relflow",
                        []}}},
     {update,manager,
-            {advanced,{"20160314-040833-relflow","20160314-192904-relflow",
+            {advanced,{"20160314-192904-relflow","20160318-033626-relflow",
                        []}}},
-    {load_module,jb_websocket}]}],
- [{"20160314-040833-relflow",[]}]}.
+    {load_module,song_fetcher}]}],
+ [{"20160314-192904-relflow",[]}]}.
