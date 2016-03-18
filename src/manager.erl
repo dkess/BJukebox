@@ -31,6 +31,7 @@ handle_call(_Msg, _From, State) ->
 	{noreply, State}.
 
 handle_cast(want_song, S) ->
+	error_logger:info_msg("got want_song ~p~n", [S]),
 	gen_server:cast(self(), announce_state),
 	case S#state.queues of
 		[] ->
@@ -48,6 +49,7 @@ handle_cast(want_song, S) ->
 	end;
 
 handle_cast({queue, Name, Songtuple}, S) ->
+	error_logger:info_msg("~s is queueing songtuple ~p~n",[Name, Songtuple]),
 	gen_server:cast(self(), announce_state),
 	case lists:keyfind(Name, 1, S#state.queues) of
 		{Name, Songlist} ->
@@ -131,7 +133,6 @@ handle_info(nomatch, S) ->
 	{noreply, S};
 % client has disconnected
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, S) ->
-	io:fwrite("client ~p disconnected~n", [Pid]),
 	gen_server:cast(self(), update_volumes),
 	{noreply, S#state{clients=lists:keydelete(Pid, 2, S#state.clients)}};
 handle_info(_Msg, S) ->

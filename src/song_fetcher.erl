@@ -17,6 +17,7 @@ get_metadata(Callback, Songurl) ->
 	wait_for_result(Callback, Worker).
 
 get_metadata_worker(Boss, Songurl) ->
+	error_logger:info_msg("calling youtube-dl to get metadata for ~s~n", [Songurl]),
 	Port = open_port({spawn_executable, os:find_executable("youtube-dl")},
 					 [{line, 2000},
 					  exit_status,
@@ -35,6 +36,7 @@ get_streamurl(Callback, Songurl) ->
 	wait_for_result(Callback, Worker).
 
 get_streamurl_worker(Boss, Songurl) ->
+	error_logger:info_msg("calling youtube-dl to get streamurl for ~s~n", [Songurl]),
 	Port = open_port({spawn_executable, os:find_executable("youtube-dl")},
 					 [{line, 2000},
 					  exit_status,
@@ -48,14 +50,13 @@ get_streamurl_worker(Boss, Songurl) ->
 
 wait_for_result(Callback, Worker) ->
 	receive
-		{'EXIT', Worker, _Reason} ->
-			io:fwrite("got error"),
+		{'EXIT', Worker, Reason} ->
+			error_logger:warning_report({Worker, Reason}),
 			Callback ! nomatch;
 		Result ->
-			io:fwrite("got result ~p~n", [Result]),
 			Callback ! {match, Result}
 	after 6000 ->
-			  io:fwrite("timed out"),
+			  error_logger:warning_msg("youtube-dl worker ~p timed out~n", [Worker]),
 			  Callback ! nomatch
 	end.
 
