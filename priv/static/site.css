@@ -38,6 +38,8 @@ h2 {
 	width: auto;
 	max-width: 120px;
 	max-height: 90px;
+	min-width: 90px;
+	min-height: 50px;
 }
 
 .songtitle {

@@ -69,8 +69,8 @@ read_song_title(Port, TitleInit) ->
 			read_song_thumbnail(Port, TitleInit ++ Title, "");
 		{Port, {data, {noeol, Title}}} ->
 			read_song_title(Port, TitleInit ++ Title);
-		_ ->
-			exit(unexpected_output)
+		Unexpected ->
+			exit({unexpected_output, Unexpected})
 	end.
 
 % second line of youtube-dl metadata output: the song's thumbnail
@@ -82,8 +82,11 @@ read_song_thumbnail(Port, Title, ThumbnailInit) ->
 			end_get_metadata(Port, {Title, ThumbnailInit ++ Thumbnail});
 		{Port, {data, {noeol, Thumbnail}}} ->
 			read_song_thumbnail(Port, Title, ThumbnailInit ++ Thumbnail);
-		_ ->
-			exit(unexpected_output)
+		% this gets run if the song has no thumbnail and the command exits prematurely
+		{Port, {exit_status, 0}} ->
+			{Title, ThumbnailInit};
+		Unexpected ->
+			exit({unexpected_output, Unexpected})
 	end.
 
 -spec end_get_metadata(Port :: port(), Metadata :: {string(), string()}) ->
@@ -93,8 +96,8 @@ end_get_metadata(Port, Metadata) ->
 	receive
 		{Port, {exit_status, 0}} ->
 			Metadata;
-		_ ->
-			exit(unexpected_output)
+		Unexpected	 ->
+			exit({unexpected_output, Unexpected})
 	end.
 
 % youtube-dl output: the song's url
@@ -105,8 +108,8 @@ read_streamurl(Port, UrlInit) ->
 			end_streamurl(Port, UrlInit ++ Url);
 		{Port, {data, {noeol, Url}}} ->
 			read_streamurl(Port, UrlInit ++ Url);
-		_ ->
-			exit(unexpected_output)
+		Unexpected ->
+			exit({unexpected_output, Unexpected})
 	end.
 
 -spec end_streamurl(Port :: port(), Url :: string()) -> string().
@@ -114,6 +117,6 @@ end_streamurl(Port, Url) ->
 	receive
 		{Port, {exit_status, 0}} ->
 			Url;
-		_ ->
-			exit(unexpected_output)
+		Unexpected ->
+			exit({unexpected_output, Unexpected})
 	end.
