@@ -9,13 +9,14 @@
 
 -record(state, {queues :: [{nonempty_string(), [song_fetcher:songtuple()]}],
 				current :: {nonempty_string(), song_fetcher:songtuple()} | noone | disconnected,
-				clients :: [{nonempty_string(), pid()}]}).
+				clients :: [{nonempty_string(), pid()}],
+			    loading :: loading | notloading}).
 
 start_link() ->
 	gen_server:start_link({local, manager}, ?MODULE, nothing, []).
 
 init(_) ->
-	{ok, #state{queues=[], current=disconnected, clients=[]}}.
+	{ok, #state{queues=[], current=disconnected, clients=[], loading=notloading}}.
 
 handle_call({join, Name}, {FromPid, _Tag}, S) ->
 	case lists:keymember(Name, 1, S#state.clients) of
@@ -45,7 +46,8 @@ handle_cast(want_song, S) ->
 							   [{NextPlayer, OtherSongs}]
 					   end,
 			{noreply, S#state{queues=lists:append(Rest, ToAppend),
-							  current={NextPlayer, NextSongtuple}}}
+							  current={NextPlayer, NextSongtuple},
+							  loading=loading}}
 	end;
 
 handle_cast({queue, Name, Songtuple}, S) ->
@@ -96,7 +98,7 @@ handle_cast({remove, Name, QueuePos}, S) ->
 		 _ ->
 			 S
 	 end};
-handle_cast(skipme, S) ->
+handle_cast(skipme, S) when S#state.loading == notloading ->
 	gen_server:cast(jb_mpd, skip),
 	{noreply, S};
 
@@ -127,10 +129,10 @@ handle_cast(_Msg, S) ->
 % we got the streaurl of a song, now play it
 handle_info({match, Streamurl}, S) ->
 	gen_server:cast(jb_mpd, {load_song, Streamurl}),
-	{noreply, S};
+	{noreply, S#state{loading=notloading}};
 handle_info(nomatch, S) ->
 	gen_server:cast(self(), want_song),
-	{noreply, S};
+	{noreply, S#state{loading=notloading}};
 % client has disconnected
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, S) ->
 	gen_server:cast(self(), update_volumes),
