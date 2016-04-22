@@ -1,3 +1,6 @@
-{"20160329-212010-relflow",
- [{"20160318-033626-relflow",[{load_module,song_fetcher}]}],
- [{"20160318-033626-relflow",[]}]}.
+{"20160422-010737-relflow",
+ [{"20160329-212010-relflow",
+   [{update,manager,
+            {advanced,{"20160329-212010-relflow","20160422-010737-relflow",
+                       []}}}]}],
+ [{"20160329-212010-relflow",[]}]}.
