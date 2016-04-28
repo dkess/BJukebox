@@ -180,8 +180,6 @@ window.onload = function() {
 			console.log(event.data);
 			if (event.data === "error invalid") {
 				errortext = "Invalid name. Use only alphanumeric characters.";
-			} else if (event.data === "error taken") {
-				errortext = "That name has been taken. Try a different one.";
 			}
 			span_nameerror.appendChild(document.createTextNode(errortext));
 		}

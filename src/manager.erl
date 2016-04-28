@@ -9,7 +9,7 @@
 
 -record(state, {queues :: [{nonempty_string(), [song_fetcher:songtuple()]}],
 				current :: {nonempty_string(), song_fetcher:songtuple()} | noone | disconnected,
-				clients :: [{nonempty_string(), pid()}],
+				clients :: [pid()],
 			    loading :: loading | notloading}).
 
 start_link() ->
@@ -18,16 +18,11 @@ start_link() ->
 init(_) ->
 	{ok, #state{queues=[], current=disconnected, clients=[], loading=notloading}}.
 
-handle_call({join, Name}, {FromPid, _Tag}, S) ->
-	case lists:keymember(Name, 1, S#state.clients) of
-		true ->
-			{reply, {error, nametaken}, S};
-		false ->
-			gen_server:cast(jb_mpd, want_volume),
-			gen_server:cast(self(), announce_state),
-			monitor(process, FromPid),
-			{reply, ok, S#state{clients=[{Name, FromPid} | S#state.clients]}}
-	end;
+handle_call(join, {FromPid, _Tag}, S) ->
+	gen_server:cast(jb_mpd, want_volume),
+	gen_server:cast(self(), announce_state),
+	monitor(process, FromPid),
+	{reply, ok, S#state{clients=[FromPid | S#state.clients]}};
 handle_call(_Msg, _From, State) ->
 	{noreply, State}.
 
@@ -103,13 +98,12 @@ handle_cast(skipme, S) when S#state.loading == notloading ->
 	{noreply, S};
 
 handle_cast({send_to_all, Msg}, S) ->
-	lists:map(fun({_Name, Pid}) -> Pid ! Msg end, S#state.clients),
+	lists:map(fun(Pid) -> Pid ! Msg end, S#state.clients),
 	{noreply, S};
 
 handle_cast(announce_state, S) ->
 	ToSend = {S#state.current,
-			  S#state.queues,
-			  lists:map(fun({Name, _Pid}) -> Name end, S#state.clients)},
+			  S#state.queues},
 	gen_server:cast(self(), {send_to_all, {manager_state, ToSend}}),
 	{noreply, S};
 
@@ -136,7 +130,7 @@ handle_info(nomatch, S) ->
 % client has disconnected
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, S) ->
 	gen_server:cast(self(), update_volumes),
-	{noreply, S#state{clients=lists:keydelete(Pid, 2, S#state.clients)}};
+	{noreply, S#state{clients=lists:delete(Pid, S#state.clients)}};
 handle_info(_Msg, S) ->
 	{noreply, S, 750}.
 

@@ -19,11 +19,11 @@ websocket_handle({text, Msg}, Req, just_connected) ->
     Name = binary_to_list(Msg),
     case validate_name(Name) of
 	true ->
-	    case gen_server:call(manager, {join, Name}) of
+	    case gen_server:call(manager, join) of
 		ok ->
 		    {reply, [{text, <<"ok">>}], Req, #state{name=Name}};
 		_ ->
-		    {reply, [{text, <<"error taken">>}], Req, just_connected}
+		    {reply, [{text, <<"error">>}], Req, just_connected}
 	    end;
 	_ ->
 	    {reply, [{text, <<"error invalid">>}], Req, just_connected}
@@ -65,7 +65,7 @@ websocket_info({match, Match}, Req, State) ->
 websocket_info(nomatch, Req, State) ->
     {reply, [{text, <<"error">>}], Req, State};
 
-websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
+websocket_info({manager_state, {Current, Queues}}, Req, State) ->
     CurrentJson = case Current of
 		      {CurrentPlayer, CurrentSong} ->
 			  [<<"{\"name\":">>, string_to_bitjson(CurrentPlayer),
@@ -78,8 +78,6 @@ websocket_info({manager_state, {Current, Queues, ClientNames}}, Req, State) ->
 		  end,
     {reply, [{text, [<<"{\"current\":">>, CurrentJson,
 		     <<",\"queues\":">>, list_to_bitjson(fun queueentry_to_bitjson/1, Queues),
-		     <<",\"clients\":">>,
-		     list_to_bitjson(fun string_to_bitjson/1, ClientNames),
 		     <<"}">>]}], Req, State};
 
 websocket_info({announce_vol, Volume}, Req, State) ->
