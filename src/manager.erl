@@ -124,7 +124,7 @@ handle_cast(_Msg, S) ->
 handle_info({match, Streamurl}, S) ->
 	gen_server:cast(jb_mpd, {load_song, Streamurl}),
 	{noreply, S#state{loading=notloading}};
-handle_info(nomatch, S) ->
+handle_info({nomatch, _}, S) ->
 	gen_server:cast(self(), want_song),
 	{noreply, S#state{loading=notloading}};
 % client has disconnected

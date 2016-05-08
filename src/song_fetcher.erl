@@ -52,12 +52,12 @@ wait_for_result(Callback, Worker) ->
 	receive
 		{'EXIT', Worker, Reason} ->
 			error_logger:warning_report({Worker, Reason}),
-			Callback ! nomatch;
+			Callback ! {nomatch, error};
 		Result ->
 			Callback ! {match, Result}
 	after 6000 ->
 			  error_logger:warning_msg("youtube-dl worker ~p timed out~n", [Worker]),
-			  Callback ! nomatch
+			  Callback ! {nomatch, timeout}
 	end.
 
 
