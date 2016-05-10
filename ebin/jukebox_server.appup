@@ -1,8 +1,3 @@
-{"20160510-010932-relflow",
- [{"20160428-220613-relflow",
-   [{update,manager,
-            {advanced,{"20160428-220613-relflow","20160510-010932-relflow",
-                       []}}},
-    {load_module,jb_websocket},
-    {load_module,song_fetcher}]}],
- [{"20160428-220613-relflow",[]}]}.
+{"20160510-011814-relflow",
+ [{"20160510-010932-relflow",[{load_module,song_fetcher}]}],
+ [{"20160510-010932-relflow",[]}]}.
