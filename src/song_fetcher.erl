@@ -21,7 +21,7 @@ get_metadata_worker(Boss, Songurl) ->
 	Port = open_port({spawn_executable, os:find_executable("python3")},
 					 [{line, 2000},
 					  exit_status,
-					  {args, ["priv/metadata.py", Songurl]}
+					  {args, [code:priv_dir(jukebox_server)++"/metadata.py", Songurl]}
 					 ]),
 	[Title, Thumbnail, Newurl] = readlines(Port),
 	Boss ! {Title, Thumbnail, Newurl}.
