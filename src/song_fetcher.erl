@@ -18,17 +18,13 @@ get_metadata(Callback, Songurl) ->
 
 get_metadata_worker(Boss, Songurl) ->
 	error_logger:info_msg("calling youtube-dl to get metadata for ~s~n", [Songurl]),
-	Port = open_port({spawn_executable, os:find_executable("youtube-dl")},
+	Port = open_port({spawn_executable, os:find_executable("python3")},
 					 [{line, 2000},
 					  exit_status,
-					  stderr_to_stdout,
-					  {args, ["--prefer-insecure",
-							  "--no-playlist",
-							  "--get-title",
-							  "--get-thumbnail",
-							  Songurl]}]),
-	{Title, Thumbnail} = read_song_title(Port, ""),
-	Boss ! {Title, Thumbnail, Songurl}.
+					  {args, ["priv/metadata.py", Songurl]}
+					 ]),
+	[Title, Thumbnail, Newurl] = readlines(Port),
+	Boss ! {Title, Thumbnail, Newurl}.
 
 get_streamurl(Callback, Songurl) ->
 	process_flag(trap_exit, true),
@@ -60,43 +56,20 @@ wait_for_result(Callback, Worker) ->
 			  Callback ! {nomatch, timeout}
 	end.
 
+-spec readlines(Port :: port()) -> [string()].
+readlines(Port) ->
+	readlines_recurse(Port, "").
 
-% first line of youtube-dl metadata output: the song's title
--spec read_song_title(Port :: port(), TitleInit :: string()) -> {string(), string()}.
-read_song_title(Port, TitleInit) ->
+-spec readlines_recurse(Port :: port(), LastText :: string()) -> [string()].
+readlines_recurse(Port, LastText) ->
 	receive
-		{Port, {data, {eol, Title}}} ->
-			read_song_thumbnail(Port, TitleInit ++ Title, "");
-		{Port, {data, {noeol, Title}}} ->
-			read_song_title(Port, TitleInit ++ Title);
-		Unexpected ->
-			exit({unexpected_output, Unexpected})
-	end.
-
-% second line of youtube-dl metadata output: the song's thumbnail
--spec read_song_thumbnail(Port :: port(), Title :: string(),
-						  ThumbnailInit :: string()) -> {string(), string()}.
-read_song_thumbnail(Port, Title, ThumbnailInit) ->
-	receive
-		{Port, {data, {eol, Thumbnail}}} ->
-			end_get_metadata(Port, {Title, ThumbnailInit ++ Thumbnail});
-		{Port, {data, {noeol, Thumbnail}}} ->
-			read_song_thumbnail(Port, Title, ThumbnailInit ++ Thumbnail);
-		% this gets run if the song has no thumbnail and the command exits prematurely
+		{Port, {data, {eol, Data}}} ->
+			[LastText ++ Data | readlines_recurse(Port, "")];
+		{Port, {data, {noeol, Data}}} ->
+			readlines_recurse(Port, LastText ++ Data);
 		{Port, {exit_status, 0}} ->
-			{Title, ThumbnailInit};
+			[];
 		Unexpected ->
-			exit({unexpected_output, Unexpected})
-	end.
-
--spec end_get_metadata(Port :: port(), Metadata :: {string(), string()}) ->
-	{string(), string()}.
-% we expect a successful exit_status
-end_get_metadata(Port, Metadata) ->
-	receive
-		{Port, {exit_status, 0}} ->
-			Metadata;
-		Unexpected	 ->
 			exit({unexpected_output, Unexpected})
 	end.
 

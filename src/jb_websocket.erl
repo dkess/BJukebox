@@ -29,12 +29,14 @@ websocket_handle({text, Msg}, Req, just_connected) ->
 	    {reply, [{text, <<"error invalid">>}], Req, just_connected}
     end;
 websocket_handle({text, Msg}, Req, State) when is_record(State, state) ->
-    case string:tokens(binary_to_list(Msg), " ") of
-	["queue", Songurl | _] ->
+    LMsg = binary_to_list(Msg),
+    case string:tokens(LMsg, " ") of
+	["queue" | _] ->
 	    % Fetch the song, and wait to get a result back.
 	    % When it does come back, it will come in the form of a
 	    % {match, Songtuple} raw message, handled in websocket_info.
-	    fetch_song_sup:get_metadata(Songurl);
+	    fetch_song_sup:get_metadata(
+	      string:substr(LMsg, string:len("queue") + 2));
 	["remove", QueuePos] ->
 	    gen_server:cast(manager,
 			    {remove, State#state.name, list_to_integer(QueuePos)});
