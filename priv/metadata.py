@@ -2,7 +2,7 @@ from sys import argv
 
 import youtube_dl
 
-args = {"prefer_insecure": True, "noplaylist": True, "simulate": True, "default_search":"ytsearch1", "quiet":True}
+args = {"prefer_insecure": True, "noplaylist": True, "simulate": True, "default_search":"ytsearch1", "quiet":True, "source_address": "0.0.0.0"}
 
 ydl = youtube_dl.YoutubeDL(args)
 
