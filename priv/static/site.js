@@ -142,12 +142,15 @@ var main_socket_handler = function (event) {
 	}
 }
 
-window.onload = function() {
-	// make error messages disappear when we click on them
-	document.getElementById("songurlerror").onclick = function() {
-		this.style.display = "none";
+function wsInit() {
+	if (sock) {
+		sock.close();
 	}
-	
+
+	document.getElementById("starttext").style.display = "block";
+	document.getElementById("nameentry").style.display = "none";
+	document.getElementById("interface").style.display = "none";
+
 	// generate a relative websocket path
 	var protocol = "ws://";
 	if (window.location.protocol === "https:") {
@@ -162,17 +165,29 @@ window.onload = function() {
 
 	sock.onopen = function (event) {
 		document.getElementById("starttext").style.display = "none";
-		document.getElementById("nameentry").style.display = "block";
+		var savedName = localStorage.getItem('bjb_name');
+		if (savedName) {
+			submitName(savedName);
+		} else {
+			document.getElementById("nameentry").style.display = "block";
+		}
 	}
-	
+
 	sock.onmessage = function (event) {
 		// these if statements handle name validation
 		if (event.data === "ok") {
 			document.getElementById("nameentry").style.display = "none";
 			document.getElementById("interface").style.display = "block";
+			var span_namedisplay = document.getElementById("namedisplay");
+			removeChildren(span_namedisplay);
+			span_namedisplay.appendChild(document.createTextNode(name));
+
+			localStorage.setItem('bjb_name', name);
 			
 			this.onmessage = main_socket_handler;
 		} else {
+			document.getElementById("starttext").style.display = "none";
+			document.getElementById("nameentry").style.display = "block";
 			var span_nameerror = document.getElementById("nameerror");
 			removeChildren(span_nameerror);
 			span_nameerror.style.display = "inline";
@@ -184,11 +199,24 @@ window.onload = function() {
 			span_nameerror.appendChild(document.createTextNode(errortext));
 		}
 	}
+}
 
+function submitName(nameToSubmit) {
+	name = nameToSubmit;
+	sock.send(name);
+}
+
+window.onload = function() {
+	wsInit();
+
+	// make error messages disappear when we click on them
+	document.getElementById("songurlerror").onclick = function() {
+		this.style.display = "none";
+	}
+	
 	document.getElementById("b-entername").onclick = function() {
 		var entered_name = document.getElementById("input-name").value;
-		sock.send(entered_name);
-		name = entered_name;
+		submitName(entered_name);
 	}
 
 	document.getElementById("b-songurl").onclick = function() {
@@ -199,6 +227,11 @@ window.onload = function() {
 			input_songurl.disabled = true;
 			this.disabled = true;
 		}
+	}
+
+	document.getElementById("b-changename").onclick = function() {
+		localStorage.removeItem("bjb_name");
+		wsInit();
 	}
 
 	document.getElementById("b-voldown").onclick = function() {

@@ -47,6 +47,14 @@ h2 {
 	align-self: center;
 }
 
+#namedisplaydiv {
+  margin-bottom: 1em;
+}
+
+#b-changename {
+  margin-left: 0.5em;
+}
+
 #volumecontrols {
   margin-top: 1em;
   display: flex;

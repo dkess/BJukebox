@@ -1,3 +1,10 @@
+{"1.1.0",
 [{<<"cowboy">>,{pkg,<<"cowboy">>,<<"1.0.3">>},0},
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"1.0.2">>},1},
- {<<"ranch">>,{pkg,<<"ranch">>,<<"1.2.0">>},1}].
+ {<<"ranch">>,{pkg,<<"ranch">>,<<"1.2.0">>},1}]}.
+[
+{pkg_hash,[
+ {<<"cowboy">>, <<"101A5F826CE9A1EBB2EA53A2CDFFFC74736E99807E9E492ECD5F26544C04082B">>},
+ {<<"cowlib">>, <<"9D769A1D062C9C3AC753096F868CA121E2730B9A377DE23DEC0F7E08B1DF84EE">>},
+ {<<"ranch">>, <<"B286A948A0706A700A9F577E5CECBB2DC66097EA79F3DDB20BA5536069BDB7AA">>}]}
+].
