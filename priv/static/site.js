@@ -1,3 +1,22 @@
+HEADINGS = [
+	"Bridges Jukebox",
+	"Bridges' Jukebox",
+	"BJukebox",
+	"B Jukebox",
+	"bJukebox",
+	"bMakerspace Jukebox",
+	"BJ Jukebox",
+	"BJB Jukebox",
+	"BJ Box",
+	"BJB",
+	"BMoffitt Jukebox",
+	"Moffitt Jukebox",
+	"Moffitt Makerspace Jukebox",
+	"Berkeley Jukebox",
+	"Bee Jukebox",
+	"\uD83D\uDC4C\uFE0E\u263A\uFE0E\u25C6\uFE0E&\uFE0E\u264F\uFE0E\u264C\uFE0E\u25A1\uFE0E\u2327\uFE0E"
+];
+
 function removeChildren(parent) {
 	while (parent.firstChild) {
 		parent.removeChild(parent.firstChild);
@@ -212,6 +231,12 @@ window.onload = function() {
 	// make error messages disappear when we click on them
 	document.getElementById("songurlerror").onclick = function() {
 		this.style.display = "none";
+	}
+
+	document.getElementById("heading").onclick = function() {
+		removeChildren(this);
+		var selected = HEADINGS[Math.floor(Math.random()*HEADINGS.length)];
+		this.appendChild(document.createTextNode(selected));
 	}
 	
 	document.getElementById("b-entername").onclick = function() {
