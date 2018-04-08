@@ -77,9 +77,9 @@ readlines_recurse(Port, LastText) ->
 -spec read_streamurl(Port :: port(), UrlInit :: string()) -> string().
 read_streamurl(Port, UrlInit) ->
 	receive
-		{Port, {data, {eol, Url}}} ->
+		{_Port, {data, {eol, Url}}} ->
 			end_streamurl(Port, UrlInit ++ Url);
-		{Port, {data, {noeol, Url}}} ->
+		{_Port, {data, {noeol, Url}}} ->
 			read_streamurl(Port, UrlInit ++ Url);
 		Unexpected ->
 			exit({unexpected_output, Unexpected})
@@ -88,7 +88,7 @@ read_streamurl(Port, UrlInit) ->
 -spec end_streamurl(Port :: port(), Url :: string()) -> string().
 end_streamurl(Port, Url) ->
 	receive
-		{Port, {exit_status, 0}} ->
+		{_Port, {exit_status, 0}} ->
 			Url;
 		Unexpected ->
 			exit({unexpected_output, Unexpected})
